@@ -49,23 +49,31 @@ static int fengz_parse_value(fengz_context *c, fengz_value *v) {
     switch (*c->json) {
         case 'n':
             return fengz_parse_null(c, v);
-        case '\0':
-            return FENGZ_PARSE_EXPECT_VALUE;
         case 'f':
             return fengz_parse_false(c, v);
         case 't':
             return fengz_parse_true(c, v);
+        case '\0':
+            return FENGZ_PARSE_EXPECT_VALUE;
         default:
             return FENGZ_PARSE_INVALID_VALUE;
     }
 }
 
 int fengz_parse(fengz_value *v, const char *json) {
-    fengz_context c;
     assert(v != NULL);
+    fengz_context c;
+    int ret;
+    v->type = FENGZ_NULL;
     c.json = json;
     fengz_parse_whitespace(&c);
-    return fengz_parse_value(&c, v);
+    if ((ret = fengz_parse_value(&c, v)) == FENGZ_PARSE_OK) {
+        fengz_parse_whitespace(&c);
+        if (c.json[0] != '\0')
+            ret = FENGZ_PARSE_ROOT_NOT_SINGULAR;
+    }
+
+    return ret;
 }
 
 fengz_type fengz_get_type(const fengz_value *v) {
